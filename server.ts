@@ -4,23 +4,11 @@ import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { logger } from './src/logger.ts';
 
 dotenv.config();
 
 const distPath = path.join(process.cwd(), 'dist');
-
-// Production Structured Logger
-const logger = {
-  info: (msg: string, meta?: Record<string, any>) => {
-    console.log(JSON.stringify({ timestamp: new Date().toISOString(), level: 'INFO', message: msg, ...meta }));
-  },
-  warn: (msg: string, meta?: Record<string, any>) => {
-    console.warn(JSON.stringify({ timestamp: new Date().toISOString(), level: 'WARN', message: msg, ...meta }));
-  },
-  error: (msg: string, meta?: Record<string, any>) => {
-    console.error(JSON.stringify({ timestamp: new Date().toISOString(), level: 'ERROR', message: msg, ...meta }));
-  }
-};
 
 // Initialize Gemini SDK with named parameters as per SKILL.md
 const ai = new GoogleGenAI({
