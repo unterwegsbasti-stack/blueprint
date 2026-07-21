@@ -119,7 +119,7 @@ Generate the blueprint adhering to the structured JSON response schema provided.
         model: "gemini-3.5-flash",
         contents: prompt,
         config: {
-          temperature: 0.2, // Niedrige Temperatur für deterministischen, stabilen Code/JSON
+          temperature: 0.2, // Low temperature for deterministic output
           responseMimeType: "application/json",
           responseSchema: responseSchema,
           systemInstruction: `You are an elite Android Software Architect and Privacy Engineer. Your primary task is to generate comprehensive, production-ready Android Technical Blueprints based on the user's application concept.
@@ -127,32 +127,7 @@ Generate the blueprint adhering to the structured JSON response schema provided.
 CRITICAL INSTRUCTION - OUTPUT FORMAT:
 You MUST output the result EXCLUSIVELY as a raw, valid JSON object. Do not wrap the JSON in markdown blocks (e.g., \`\`\`json ... \`\`\`). Do not add any introductory or concluding text. The frontend relies on this exact parsing.
 
-The JSON MUST adhere exactly to the following schema:
-
-{
-  "summaryTab": {
-    "appName": "String (A professional, catchy name based on the idea)",
-    "vision": "String (Short executive summary)",
-    "architecturePattern": "String (e.g., MVI with Clean Architecture)"
-  },
-  "databaseTab": {
-    "entityCode": "String (Raw Kotlin code. Preserve line breaks with \\n)",
-    "daoCode": "String (Raw Kotlin code. Preserve line breaks with \\n)"
-  },
-  "uiTab": {
-    "composeCode": "String (Raw Kotlin Jetpack Compose code. Preserve line breaks with \\n)"
-  },
-  "gradleTab": {
-    "dependencies": [
-      "String (e.g., implementation(\\\"androidx.room:room-ktx:2.6.1\\\"))"
-    ]
-  },
-  "securityTab": {
-    "concepts": [
-      "String (Security architecture implementations)"
-    ]
-  }
-}
+The JSON MUST adhere exactly to the schema provided.
 
 ENGINEERING DIRECTIVES FOR KOTLIN CODE:
 1. Room & SQLCipher (databaseTab): 
@@ -174,12 +149,34 @@ ENGINEERING DIRECTIVES FOR KOTLIN CODE:
         }
       });
 
-      const parsedBlueprint = JSON.parse(result.text || "{}");
+      if (!result || !result.text) {
+        return res.status(502).json({ error: 'The AI model generated an empty response. Please retry.' });
+      }
+
+      let parsedBlueprint: any;
+      try {
+        parsedBlueprint = JSON.parse(result.text);
+      } catch (parseError) {
+        console.error('JSON parse error from Gemini output:', parseError, result.text);
+        return res.status(502).json({ 
+          error: 'The AI response contained invalid JSON formatting. Please retry your generation request.' 
+        });
+      }
+
       res.json(parsedBlueprint);
 
     } catch (error: any) {
       console.error('Generation error:', error);
-      res.status(500).json({ error: error.message || 'Failed to generate technical blueprint.' });
+      const isTimeout = error.message?.toLowerCase().includes('timeout') || error.code === 'ETIMEDOUT';
+      const isAuthError = error.status === 401 || error.message?.includes('API_KEY');
+
+      if (isTimeout) {
+        return res.status(504).json({ error: 'The generation request timed out. Please try again with a slightly simpler app concept.' });
+      } else if (isAuthError) {
+        return res.status(401).json({ error: 'Gemini API authentication failed. Please verify process.env.GEMINI_API_KEY.' });
+      }
+
+      res.status(500).json({ error: error.message || 'Failed to generate technical blueprint. Please check server logs.' });
     }
   });
 

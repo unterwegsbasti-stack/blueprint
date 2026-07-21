@@ -2,287 +2,37 @@ import React, { useState, useEffect } from 'react';
 import { 
   Smartphone, 
   Cpu, 
-  Layers, 
+  Layers,
   Lock, 
   Database, 
-  Code, 
-  FileText, 
-  Download, 
-  Check, 
+  Code,
+  FileText,
+  Download,
+  Check,
   Loader2, 
   Shield, 
-  FolderTree, 
-  Globe, 
+  FolderTree,
+  Globe,
   MapPin, 
   Bluetooth, 
   Camera, 
   Bell, 
   RefreshCw, 
-  Copy, 
+  Copy,
   Sparkles, 
   BookOpen,
-  ArrowRight,
   ChevronRight,
   ChevronDown,
   Printer,
   Info
 } from 'lucide-react';
 import BlueprintViewer from './components/BlueprintViewer';
-
-// Pre-defined templates for quick start
-const TEMPLATES = [
-  {
-    id: "custom",
-    label: "✨ Eigenes Konzept erstellen...",
-    appName: "",
-    audience: "",
-    concept: "",
-    integrations: [] as string[],
-    structure: "single-module" as const,
-    pattern: "MVVM" as const
-  },
-  {
-    id: "vault",
-    label: "🔐 Zero-Knowledge Note Vault",
-    appName: "VaultNotes",
-    audience: "Privacy-conscious professionals, journalists",
-    concept: "A zero-knowledge encrypted local notes application using local-only hardware key generation and SQLCipher.",
-    integrations: ["room_db", "biometrics", "workmanager"],
-    structure: "single-module" as const,
-    pattern: "MVI" as const
-  },
-  {
-    id: "2fa",
-    label: "⏱️ Offline 2FA Authenticator",
-    appName: "StealthAuth",
-    audience: "Crypto-investors, security engineers",
-    concept: "Local-only TOTP 2FA authenticator. CameraX for QR scanning. No cloud sync, QR-code based encrypted export only.",
-    integrations: ["room_db", "biometrics", "notifications"],
-    structure: "single-module" as const,
-    pattern: "MVVM" as const
-  },
-  {
-    id: "health",
-    label: "🩺 Encrypted Vitals Tracker",
-    appName: "VitalsVault",
-    audience: "Patients requiring extreme health data privacy",
-    concept: "Local-only medication and symptom tracker. Uses WorkManager for offline alarms and strict Room data modeling.",
-    integrations: ["room_db", "workmanager", "notifications"],
-    structure: "single-module" as const,
-    pattern: "MVVM" as const
-  }
-];
-
-interface Blueprint {
-  // New strict tab structures
-  summaryTab?: {
-    appName: string;
-    vision: string;
-    architecturePattern: string;
-  };
-  gradleTab?: {
-    dependencies: string[];
-  };
-  databaseTab?: {
-    entityCode: string;
-    daoCode: string;
-  };
-  uiTab?: {
-    composeCode: string;
-  };
-  securityTab?: {
-    concepts: string[];
-  };
-
-  // Old structures
-  executiveSummary: {
-    vision: string;
-    targetAudience: string;
-    architecturalGoals: string[];
-  };
-  techStack: {
-    language: string;
-    uiFramework: string;
-    diFramework: string;
-    architecturePattern: string;
-    persistence: string;
-    network: string;
-    asyncFramework: string;
-    dependencies: Array<{ name: string; dependency: string; description: string }>;
-    plugins: Array<{ name: string; plugin: string; description: string }>;
-  };
-  coreFeatures: Array<{
-    name: string;
-    description: string;
-    implementationDetails: string;
-    uiComponents: string[];
-    stateFlow: string;
-  }>;
-  securityPrivacy: {
-    dataPersistence: string;
-    dataTransmission: string;
-    androidKeystore: string;
-    privacyByDesign: string[];
-  };
-  dataModel: {
-    jsonStructure: string;
-    kotlinDataClasses: string;
-    roomEntityCode: string;
-  };
-  packageStructure: {
-    type: string;
-    tree: string;
-  };
-}
-
-const normalizeBlueprint = (data: any): Blueprint => {
-  const summaryTab = data.summaryTab || {
-    appName: data.appName || 'Android App',
-    vision: data.executiveSummary?.vision || 'No vision statement provided.',
-    architecturePattern: data.architecturePattern || data.techStack?.architecturePattern || 'MVVM with Clean Architecture'
-  };
-
-  const databaseTab = data.databaseTab || {
-    entityCode: data.dataModel?.roomEntityCode || '// Room Entities not provided',
-    daoCode: data.dataModel?.kotlinDataClasses || '// Room DAO not provided'
-  };
-
-  const uiTab = data.uiTab || {
-    composeCode: data.dataModel?.kotlinDataClasses || '// Compose code not provided'
-  };
-
-  const gradleTab = data.gradleTab || {
-    dependencies: data.techStack?.dependencies?.map((d: any) => d.dependency) || []
-  };
-
-  const securityTab = data.securityTab || {
-    concepts: data.securityPrivacy?.privacyByDesign || []
-  };
-
-  const executiveSummary = data.executiveSummary || {
-    vision: summaryTab.vision,
-    targetAudience: data.targetAudience || "Privacy-conscious professionals",
-    architecturalGoals: securityTab.concepts && securityTab.concepts.length > 0 ? securityTab.concepts.slice(0, 4) : ["Ensure local-only encryption"]
-  };
-
-  const techStack = data.techStack || {
-    language: "Kotlin",
-    uiFramework: "Jetpack Compose (Material 3)",
-    diFramework: "Dagger Hilt",
-    architecturePattern: summaryTab.architecturePattern,
-    persistence: "Room with SQLCipher",
-    network: "Retrofit / Ktor",
-    asyncFramework: "Kotlin Coroutines & Flow",
-    dependencies: (gradleTab.dependencies || []).map((d: string) => {
-      let cleanName = "Dependency";
-      try {
-        const parts = d.match(/["'](.*?)["']/);
-        if (parts && parts[1]) {
-          const splitParts = parts[1].split(':');
-          cleanName = splitParts[splitParts.length - 2] || "Dependency";
-        }
-      } catch (e) {}
-      return {
-        name: cleanName,
-        dependency: d,
-        description: "Standard production dependency generated for your tech stack"
-      };
-    }),
-    plugins: [
-      { name: "Kotlin KSP", plugin: 'id("com.google.devtools.ksp") version "1.9.22-1.0.17"', description: "Kotlin Symbol Processing for Room" }
-    ]
-  };
-
-  const coreFeatures = data.coreFeatures || [
-    {
-      name: "Uni-flow Architecture & Presentation",
-      description: summaryTab.vision,
-      implementationDetails: "Developed following the uni-directional MVI/MVVM pattern utilizing declarative UI layouts with Room offline persistence.",
-      uiComponents: ["MainScreen", "UiStateObserver"],
-      stateFlow: "UI Intent -> ViewModel -> Repository -> Database Flow"
-    }
-  ];
-
-  const securityPrivacy = data.securityPrivacy || {
-    dataPersistence: "Encrypted Room database using net.zetetic:android-database-sqlcipher",
-    dataTransmission: "TLS 1.3 with Certificate Pinning enabled by default",
-    androidKeystore: "Hardware-backed master key generation in Keystore",
-    privacyByDesign: securityTab.concepts || []
-  };
-
-  const dataModel = data.dataModel || {
-    jsonStructure: JSON.stringify({ status: "success", data: "encrypted" }, null, 2),
-    kotlinDataClasses: uiTab.composeCode,
-    roomEntityCode: databaseTab.entityCode + "\n\n" + databaseTab.daoCode
-  };
-
-  const packageStructure = data.packageStructure || {
-    type: "single-module",
-    tree: "app/src/main/java/com/vaultcore/app\n├── data\n│   └── local\n│       └── RoomDatabase.kt\n├── presentation\n│   └── ui\n│       └── ComposeScreens.kt\n└── build.gradle.kts"
-  };
-
-  return {
-    ...data,
-    summaryTab,
-    databaseTab,
-    uiTab,
-    gradleTab,
-    securityTab,
-    executiveSummary,
-    techStack,
-    coreFeatures,
-    securityPrivacy,
-    dataModel,
-    packageStructure
-  };
-};
-
-const faqItems = [
-  {
-    question: "Was ist der Android Technical Blueprint Generator?",
-    answer: [
-      "Der Android Technical Blueprint Generator ist ein hochentwickeltes Werkzeug für Mobile-Software-Architekten, Produktmanager und Entwickler. Er übersetzt eine einfache App-Idee oder ein grobes Konzept in eine vollständige, professionelle und sofort nutzbare technische Spezifikation (einen 'Technical Blueprint').",
-      "Er generiert nicht nur Strukturdiagramme, sondern liefert direkt einsatzbereite Kotlin-Klassen für Room-Datenbanken (Entities & DAOs), Dagger Hilt Dependency Injection Konfigurationen, modernen Jetpack Compose UI-Code, vollständige build.gradle.kts-Abhängigkeiten und sogar eine automatisierte CI/CD-Pipeline für GitHub Actions."
-    ]
-  },
-  {
-    question: "Welches Architektur-Pattern sollte ich für mein Android-Projekt wählen (MVVM vs. MVI)?",
-    answer: [
-      "Das empfohlene Pattern hängt von der Komplexität des State-Managements deiner App ab.",
-      "MVVM (Model-View-ViewModel) eignet sich hervorragend für standardmäßige datengetriebene Apps. Es trennt Geschäftslogik klar von der UI und ist besonders einsteigerfreundlich sowie einfach zu testen. In Kombination mit Clean Architecture (Separation of Concerns) ist es der am weitesten verbreitete Industriestandard.",
-      "MVI (Model-View-Intent) ist ideal für hochkomplexe, benutzerinteraktionsreiche Apps mit vielen UI-Zuständen. Durch den unidirektionalen Datenfluss (Single Source of Truth) sind unvollständige oder fehlerhafte UI-Zustände fast ausgeschlossen, was die Stabilität komplexer Oberflächen drastisch erhöht."
-    ]
-  },
-  {
-    question: "Was bedeutet 'Privacy by Design' konkret bei den generierten Konzepten?",
-    answer: [
-      "Privacy by Design bedeutet, dass Datenschutz und Datensparsamkeit nicht nachträglich als 'Pflaster' hinzugefügt, sondern von Grund auf in der Architektur verankert sind.",
-      "Unser Generator forciert standardmäßig: 1. Lokale Speicherung in einer Room-Datenbank, die mit SQLCipher (AES-256) verschlüsselt ist. 2. Sicherung von Verschlüsselungs-Schlüsseln im hardwaregestützten Android Keystore. 3. Biometrische Identifikation (Fingerabdruck/Gesichtserkennung) direkt beim App-Start. 4. Keine ungefragte Telemetrie oder Datenübertragung an Server von Drittanbietern."
-    ]
-  },
-  {
-    question: "Wie richte ich die generierte CI/CD Pipeline auf GitHub ein?",
-    answer: [
-      "1. Erstelle in deinem Android-Projektverzeichnis die Ordnerstruktur '.github/workflows/'.",
-      "2. Erstelle darin eine Datei namens 'android.yml' und füge den kopierten YAML-Code aus dem Tab 'CI/CD Pipeline' ein.",
-      "3. Pushe dein Projekt auf GitHub. Unter dem Reiter 'Actions' siehst du nun, dass GitHub bei jedem Push oder Pull-Request automatisch dein Projekt auscheckt, Java 17 (Temurin) einrichtet, statische Codeanalysen (Android Lint) durchführt, JUnit-Tests ausführt und ein Debug-APK baut, welches als Artefakt gespeichert wird."
-    ]
-  },
-  {
-    question: "Wie kann ich den generierten Kotlin-Code in Android Studio verwenden?",
-    answer: [
-      "Alle generierten Klassen sind vollkommen standardkonform und nutzen moderne Jetpack-Bibliotheken.",
-      "Du kannst die Room-Entities, DAOs, Hilt-Module und Jetpack Compose Views direkt kopieren. Achte darauf, dass du die benötigten Abhängigkeiten aus dem Tab 'Dependencies' in deiner build.gradle.kts (App-Ebene) eingetragen hast und dein Gradle-Projekt synchronisierst."
-    ]
-  },
-  {
-    question: "Was ist der Unterschied zwischen Single-Module und Multi-Module Projekten?",
-    answer: [
-      "Single-Module-Projekte bündeln den gesamten Quellcode in einem einzigen Modul (:app). Das ist perfekt für kleine bis mittlere Apps oder schnelle Prototypen, da es die Buildzeit kurz und die Komplexität extrem gering hält.",
-      "Multi-Module-Projekte teilen die App in logische Module auf (z.B. ':core:database', ':core:model', ':domain', ':feature:home'). Das verbessert die Wartbarkeit bei großen Teams, ermöglicht Code-Wiederverwendung und optimiert die Gradle-Buildzeiten durch parallele Kompilierung."
-    ]
-  }
-];
+import { Header } from './components/Header';
+import { QuickStartTemplates } from './components/QuickStartTemplates';
+import { InputField, TextAreaField } from './components/FormInput';
+import { ErrorMessage } from './components/ErrorMessage';
+import { FaqSection } from './components/FaqSection';
+import { TEMPLATES, Blueprint, normalizeBlueprint, Template } from './types';
 
 export default function App() {
   const [appName, setAppName] = useState('');
@@ -335,19 +85,14 @@ export default function App() {
     localStorage.setItem('android_blueprint_history', JSON.stringify(updated));
   };
 
-  const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const templateId = e.target.value;
-    setSelectedTemplateId(templateId);
-
-    const template = TEMPLATES.find(t => t.id === templateId);
-    if (template) {
-      setAppName(template.appName);
-      setTargetAudience(template.audience);
-      setConcept(template.concept);
-      setKeyIntegrations(template.integrations || []);
-      setProjectStructure((template.structure || "single-module") as any);
-      setArchitecturePattern((template.pattern || "MVVM") as any);
-    }
+  const handleTemplateSelect = (template: Template) => {
+    setSelectedTemplateId(template.id);
+    setAppName(template.appName);
+    setTargetAudience(template.audience);
+    setConcept(template.concept);
+    setKeyIntegrations(template.integrations || []);
+    setProjectStructure((template.structure || "single-module") as any);
+    setArchitecturePattern((template.pattern || "MVVM") as any);
   };
 
   const toggleIntegration = (id: string) => {
@@ -358,8 +103,8 @@ export default function App() {
     }
   };
 
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGenerate = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!appName.trim() || !concept.trim()) {
       setError("Please fill in both App Name and App Concept.");
       return;
@@ -397,7 +142,14 @@ export default function App() {
       });
 
       if (!response.ok) {
-        throw new Error(await response.text() || 'Failed to generate technical blueprint.');
+        let errorMsg = 'Failed to generate technical blueprint.';
+        try {
+          const errJson = await response.json();
+          errorMsg = errJson.error || errorMsg;
+        } catch {
+          errorMsg = (await response.text()) || errorMsg;
+        }
+        throw new Error(errorMsg);
       }
 
       const data = await response.json();
@@ -491,30 +243,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 selection:bg-teal-500 selection:text-black font-sans">
       {/* Header */}
-      <header className="border-b border-neutral-800 bg-neutral-900/60 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-teal-500 text-neutral-950 p-2 rounded-xl shadow-lg shadow-teal-500/15 flex items-center justify-center">
-              <Smartphone className="w-6 h-6 stroke-[2]" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-                Android Technical Blueprint Generator
-                <span className="text-xs bg-neutral-800 text-neutral-400 px-2 py-0.5 rounded-full font-normal">v1.2</span>
-              </h1>
-              <p className="text-xs text-neutral-400">Architect-grade specifications following "Privacy by Design" & Kotlin Jetpack Compose standards</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-xs bg-teal-500/10 text-teal-400 border border-teal-500/20 px-3 py-1 rounded-xl font-bold flex items-center gap-1.5 shadow-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-teal-400 animate-pulse"></span>
-              MIT Open Source
-            </span>
-            <span className="text-xs text-neutral-500 hidden sm:inline">Android Standards Master Class</span>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Workspace */}
       <main className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -523,33 +252,10 @@ export default function App() {
         <section className="lg:col-span-5 flex flex-col gap-6">
           
           {/* Quick-start Templates */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 flex flex-col gap-3">
-            <div className="flex items-center gap-2 text-teal-400 font-semibold text-sm">
-              <Sparkles className="w-4 h-4" />
-              <span>Quick-Start Concept Templates</span>
-            </div>
-            <p className="text-xs text-neutral-400">Wähle eine Vorlage aus, um die Spezifikationen automatisch auszufüllen:</p>
-            
-            <div className="relative mt-1">
-              <select
-                value={selectedTemplateId}
-                onChange={handleTemplateChange}
-                className="w-full appearance-none bg-neutral-950 border border-neutral-800 text-white py-3 pl-4 pr-10 rounded-xl focus:outline-none focus:border-teal-500/50 transition-colors text-xs font-medium cursor-pointer"
-              >
-                {TEMPLATES.map((t) => (
-                  <option key={t.id} value={t.id} className="bg-neutral-950 text-neutral-300 py-2">
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-              {/* Custom Chevron Icon für den Premium-Look */}
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-neutral-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
-          </div>
+          <QuickStartTemplates
+            selectedTemplateId={selectedTemplateId}
+            onTemplateChange={handleTemplateSelect}
+          />
 
           {/* Core Configuration Form */}
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-xl shadow-black/40">
@@ -561,54 +267,41 @@ export default function App() {
             <form onSubmit={handleGenerate} className="flex flex-col gap-5">
               
               {/* App Name */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-neutral-300 uppercase tracking-wider">App Name</label>
-                <input
-                  type="text"
-                  value={appName}
-                  onChange={e => {
-                    setAppName(e.target.value);
-                    setSelectedTemplateId('custom');
-                  }}
-                  placeholder="e.g. VaultNotes, NaviSafe"
-                  className="w-full px-4 py-2.5 rounded-xl bg-neutral-950 border border-neutral-800 text-white placeholder-neutral-600 focus:outline-none focus:border-teal-500/50 transition-colors text-sm"
-                  required
-                />
-              </div>
+              <InputField
+                label="App Name"
+                value={appName}
+                onChange={(val) => {
+                  setAppName(val);
+                  setSelectedTemplateId('custom');
+                }}
+                placeholder="e.g. VaultNotes, StealthAuth"
+                required
+              />
 
               {/* Target Audience */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-neutral-300 uppercase tracking-wider">Target Audience (Optional)</label>
-                <input
-                  type="text"
-                  value={targetAudience}
-                  onChange={e => {
-                    setTargetAudience(e.target.value);
-                    setSelectedTemplateId('custom');
-                  }}
-                  placeholder="e.g. Privacy-conscious journalists, field scientists"
-                  className="w-full px-4 py-2.5 rounded-xl bg-neutral-950 border border-neutral-800 text-white placeholder-neutral-600 focus:outline-none focus:border-teal-500/50 transition-colors text-sm"
-                />
-              </div>
+              <InputField
+                label="Target Audience"
+                value={targetAudience}
+                onChange={(val) => {
+                  setTargetAudience(val);
+                  setSelectedTemplateId('custom');
+                }}
+                placeholder="e.g. Privacy-conscious journalists, field scientists"
+                optionalTag
+              />
 
               {/* Concept / Description */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-neutral-300 uppercase tracking-wider flex justify-between items-center">
-                  <span>App Concept & Core Vision</span>
-                  <span className="text-[10px] text-neutral-500 font-normal">Provide 2-3 sentences</span>
-                </label>
-                <textarea
-                  value={concept}
-                  onChange={e => {
-                    setConcept(e.target.value);
-                    setSelectedTemplateId('custom');
-                  }}
-                  rows={4}
-                  placeholder="What is the app's ultimate vision? How does it operate? Define why privacy, offline usage, or any custom integrations are vital."
-                  className="w-full px-4 py-3 rounded-xl bg-neutral-950 border border-neutral-800 text-white placeholder-neutral-600 focus:outline-none focus:border-teal-500/50 transition-colors text-sm resize-none leading-relaxed"
-                  required
-                />
-              </div>
+              <TextAreaField
+                label="App Concept & Core Vision"
+                value={concept}
+                onChange={(val) => {
+                  setConcept(val);
+                  setSelectedTemplateId('custom');
+                }}
+                placeholder="What is the app's ultimate vision? How does it operate? Define why privacy, offline usage, or any custom integrations are vital."
+                required
+                rows={4}
+              />
 
               {/* Key Integrations (Custom toggle selectors) */}
               <div className="flex flex-col gap-2">
@@ -1957,48 +1650,10 @@ jobs:
           </div>
 
           {/* Accordion FAQ Area */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 md:p-8 flex flex-col gap-5 shadow-xl">
-            <h3 className="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-2">
-              <Info className="w-4 h-4 text-teal-400" />
-              Häufig gestellte Fragen (FAQ)
-            </h3>
-
-            <div className="flex flex-col gap-3">
-              {faqItems.map((faq, index) => {
-                const isOpen = activeFaqIndex === index;
-                return (
-                  <div 
-                    key={index} 
-                    className="border border-neutral-850 bg-neutral-950/40 rounded-xl overflow-hidden transition-all duration-200"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setActiveFaqIndex(isOpen ? null : index)}
-                      className="w-full px-5 py-4 flex items-center justify-between gap-4 text-left font-semibold text-xs sm:text-sm text-neutral-200 hover:text-white hover:bg-neutral-900/30 transition-all cursor-pointer"
-                    >
-                      <span className="flex items-center gap-3">
-                        <span className="text-teal-400 font-bold font-mono">0{index + 1}.</span>
-                        <span>{faq.question}</span>
-                      </span>
-                      <ChevronDown className={`w-4 h-4 text-neutral-500 transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180 text-teal-400' : ''}`} />
-                    </button>
-                    
-                    <div 
-                      className={`transition-all duration-300 overflow-hidden ${
-                        isOpen ? 'max-h-[500px] border-t border-neutral-850 bg-neutral-950/80' : 'max-h-0'
-                      }`}
-                    >
-                      <div className="p-5 text-xs text-neutral-400 leading-relaxed space-y-2.5 font-sans">
-                        {faq.answer.map((paragraph, pIdx) => (
-                          <p key={pIdx}>{paragraph}</p>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <FaqSection
+            activeFaqIndex={activeFaqIndex}
+            onToggleFaq={(idx) => setActiveFaqIndex(idx)}
+          />
         </section>
 
       </main>
