@@ -1,0 +1,6 @@
+{
+  "name": "Android Technical Blueprint Generator",
+  "description": "An interactive, expert Android Software Architect assistant that designs professional technical blueprints, clean architecture structures, and security patterns based on your app ideas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@media print {
+  /* Hide interactive/extraneous components on the page */
+  header,
+  section.lg\:col-span-5,
+  .no-print,
+  .print-hide,
+  button,
+  .tab-nav-buttons,
+  iframe,
+  footer {
+    display: none !important;
+  }
+
+  /* Reset outer layouts to print-friendly defaults */
+  body, html {
+    background: #ffffff !important;
+    color: #0a0a0a !important;
+    font-size: 12pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  main {
+    display: block !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  section.lg\:col-span-7 {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+  }
+
+  /* Clean up dark/colored cards for high-contrast white printing */
+  .bg-neutral-900,
+  .bg-neutral-950,
+  .bg-neutral-950\/50,
+  .bg-neutral-950\/40,
+  .bg-neutral-950\/60,
+  .bg-neutral-900\/40,
+  .bg-neutral-900\/60,
+  .bg-neutral-800 {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #0a0a0a !important;
+    border-color: #e5e5e5 !important;
+    box-shadow: none !important;
+  }
+
+  /* Text color overrides */
+  .text-white, 
+  .text-neutral-100, 
+  .text-neutral-200, 
+  .text-neutral-300, 
+  .text-neutral-400, 
+  .text-neutral-500 {
+    color: #111111 !important;
+  }
+
+  .text-teal-400, 
+  .text-teal-300, 
+  .text-emerald-400,
+  .text-teal-500 {
+    color: #0f766e !important; /* Rich print teal */
+  }
+
+  /* Ensure lines and borders stand out cleanly */
+  .border, 
+  .border-b, 
+  .border-t, 
+  .border-r, 
+  .border-l, 
+  .border-neutral-800, 
+  .border-neutral-850 {
+    border-color: #d4d4d4 !important;
+  }
+
+  /* Force background colors on specific print elements if requested (Chrome/Safari) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Preformatted code snippet printing styling */
+  pre, code, span.token {
+    background-color: #f5f5f5 !important;
+    color: #111111 !important;
+    text-shadow: none !important;
+    border: 1px solid #e5e5e5 !important;
+    border-radius: 8px !important;
+    font-size: 9pt !important;
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
+  }
+
+  /* Expand hidden scroll areas so content is completely shown */
+  .overflow-y-auto, .max-h-\[70vh\], .max-h-\[600px\] {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
