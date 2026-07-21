@@ -7,8 +7,7 @@ import { fileURLToPath } from 'url';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const distPath = path.join(process.cwd(), 'dist');
 
 // Initialize Gemini SDK with named parameters as per SKILL.md
 const ai = new GoogleGenAI({
@@ -182,9 +181,9 @@ ENGINEERING DIRECTIVES FOR KOTLIN CODE:
 
   // Serve Client
   if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, 'dist')));
+    app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+      res.sendFile(path.join(distPath, 'index.html'));
     });
   } else {
     const vite = await createViteServer({
