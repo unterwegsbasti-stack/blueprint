@@ -9,6 +9,19 @@ dotenv.config();
 
 const distPath = path.join(process.cwd(), 'dist');
 
+// Production Structured Logger
+const logger = {
+  info: (msg: string, meta?: Record<string, any>) => {
+    console.log(JSON.stringify({ timestamp: new Date().toISOString(), level: 'INFO', message: msg, ...meta }));
+  },
+  warn: (msg: string, meta?: Record<string, any>) => {
+    console.warn(JSON.stringify({ timestamp: new Date().toISOString(), level: 'WARN', message: msg, ...meta }));
+  },
+  error: (msg: string, meta?: Record<string, any>) => {
+    console.error(JSON.stringify({ timestamp: new Date().toISOString(), level: 'ERROR', message: msg, ...meta }));
+  }
+};
+
 // Initialize Gemini SDK with named parameters as per SKILL.md
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -22,6 +35,24 @@ const ai = new GoogleGenAI({
 async function startServer() {
   const app = express();
   app.use(express.json());
+
+  // Structured HTTP Request Logging Middleware (logs API routes and error responses)
+  app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+      const durationMs = Date.now() - start;
+      const isApi = req.path.startsWith('/api');
+      if (isApi || res.statusCode >= 400 || process.env.NODE_ENV === 'production') {
+        logger.info('HTTP Request', {
+          method: req.method,
+          path: req.path,
+          statusCode: res.statusCode,
+          durationMs
+        });
+      }
+    });
+    next();
+  });
 
   // API Route for Technical Blueprint Generation
   app.post('/api/generate-blueprint', async (req, res) => {
@@ -156,7 +187,7 @@ ENGINEERING DIRECTIVES FOR KOTLIN CODE:
       try {
         parsedBlueprint = JSON.parse(result.text);
       } catch (parseError) {
-        console.error('JSON parse error from Gemini output:', parseError, result.text);
+        logger.error('JSON parse error from Gemini output', { error: String(parseError), textSnippet: result.text.slice(0, 200) });
         return res.status(502).json({ 
           error: 'The AI response contained invalid JSON formatting. Please retry your generation request.' 
         });
@@ -165,7 +196,7 @@ ENGINEERING DIRECTIVES FOR KOTLIN CODE:
       res.json(parsedBlueprint);
 
     } catch (error: any) {
-      console.error('Generation error:', error);
+      logger.error('Blueprint generation failure', { errorMsg: error.message, stack: error.stack });
       const isTimeout = error.message?.toLowerCase().includes('timeout') || error.code === 'ETIMEDOUT';
       const isAuthError = error.status === 401 || error.message?.includes('API_KEY');
 
@@ -195,7 +226,7 @@ ENGINEERING DIRECTIVES FOR KOTLIN CODE:
 
   const port = process.env.PORT || 3000;
   app.listen(port, () => {
-    console.log(`Server is running at http://localhost:${port}`);
+    logger.info(`Server listening on port ${port}`, { port, env: process.env.NODE_ENV || 'development' });
   });
 }
 
