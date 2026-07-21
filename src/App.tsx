@@ -141,15 +141,43 @@ export default function App() {
         })
       });
 
+      const contentType = response.headers.get('content-type') || '';
+
       if (!response.ok) {
         let errorMsg = 'Failed to generate technical blueprint.';
-        try {
-          const errJson = await response.json();
-          errorMsg = errJson.error || errorMsg;
-        } catch {
-          errorMsg = (await response.text()) || errorMsg;
+        if (contentType.includes('application/json')) {
+          try {
+            const errJson = await response.json();
+            errorMsg = errJson.error || errorMsg;
+          } catch {
+            errorMsg = 'Server returned an unparseable error response.';
+          }
+        } else {
+          try {
+            const text = await response.text();
+            if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+              errorMsg = `Server error (${response.status} ${response.statusText}). Please check backend connection and retry.`;
+            } else {
+              errorMsg = text || errorMsg;
+            }
+          } catch {
+            errorMsg = `Server error (${response.status} ${response.statusText}).`;
+          }
         }
         throw new Error(errorMsg);
+      }
+
+      if (!contentType.includes('application/json')) {
+        let rawText = '';
+        try {
+          rawText = await response.text();
+        } catch {
+          // ignore
+        }
+        if (rawText.includes('<!DOCTYPE') || rawText.includes('<html')) {
+          throw new Error('Received an HTML page instead of JSON from backend. Please retry.');
+        }
+        throw new Error('Expected JSON response from backend server.');
       }
 
       const data = await response.json();

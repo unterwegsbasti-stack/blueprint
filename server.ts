@@ -134,7 +134,7 @@ Generate the blueprint adhering to the structured JSON response schema provided.
       };
 
       const result = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.6-flash",
         contents: prompt,
         config: {
           temperature: 0.2, // Low temperature for deterministic output
@@ -171,11 +171,23 @@ ENGINEERING DIRECTIVES FOR KOTLIN CODE:
         return res.status(502).json({ error: 'The AI model generated an empty response. Please retry.' });
       }
 
+      let cleanText = result.text.trim();
+      if (cleanText.startsWith('```')) {
+        cleanText = cleanText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+      }
+
+      if (cleanText.startsWith('<')) {
+        logger.error('Gemini returned HTML snippet instead of JSON', { textSnippet: cleanText.slice(0, 200) });
+        return res.status(502).json({ 
+          error: 'The AI service returned unexpected HTML output. Please retry your blueprint request.' 
+        });
+      }
+
       let parsedBlueprint: any;
       try {
-        parsedBlueprint = JSON.parse(result.text);
+        parsedBlueprint = JSON.parse(cleanText);
       } catch (parseError) {
-        logger.error('JSON parse error from Gemini output', { error: String(parseError), textSnippet: result.text.slice(0, 200) });
+        logger.error('JSON parse error from Gemini output', { error: String(parseError), textSnippet: cleanText.slice(0, 200) });
         return res.status(502).json({ 
           error: 'The AI response contained invalid JSON formatting. Please retry your generation request.' 
         });
